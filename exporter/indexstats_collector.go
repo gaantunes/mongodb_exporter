@@ -33,7 +33,7 @@ type IndexstatsCollector struct {
 	Collections     []string
 	DiscoveringMode bool
 	Logger          *logrus.Logger
-	TopologyInfo    labelsGetter
+	TopologyInfo    LabelsGetter
 }
 
 func (d *IndexstatsCollector) Describe(ch chan<- *prometheus.Desc) {

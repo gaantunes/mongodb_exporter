@@ -31,7 +31,7 @@ type DiagnosticDataCollector struct {
 	Client         *mongo.Client
 	CompatibleMode bool
 	Logger         *logrus.Logger
-	TopologyInfo   labelsGetter
+	TopologyInfo   LabelsGetter
 }
 
 func (d *DiagnosticDataCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -71,10 +71,10 @@ func (d *DiagnosticDataCollector) Collect(ch chan<- prometheus.Metric) {
 			metrics = append(metrics, cem)
 		}
 
-		nodeType, err := getNodeType(d.Ctx, d.Client)
+		nodeType, err := GetNodeType(d.Ctx, d.Client)
 		if err != nil {
 			d.Logger.Errorf("Cannot get node type to check if this is a mongos: %s", err)
-		} else if nodeType == typeMongos {
+		} else if nodeType == TypeMongos {
 			metrics = append(metrics, mongosMetrics(d.Ctx, d.Client, d.Logger)...)
 		}
 	}

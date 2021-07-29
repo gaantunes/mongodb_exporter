@@ -35,7 +35,7 @@ type ReplSetGetStatusCollector struct {
 	Client         *mongo.Client
 	CompatibleMode bool
 	Logger         *logrus.Logger
-	TopologyInfo   labelsGetter
+	TopologyInfo   LabelsGetter
 }
 
 func (d *ReplSetGetStatusCollector) Describe(ch chan<- *prometheus.Desc) {

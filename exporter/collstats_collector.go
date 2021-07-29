@@ -33,7 +33,7 @@ type CollstatsCollector struct {
 	CompatibleMode  bool
 	DiscoveringMode bool
 	Logger          *logrus.Logger
-	TopologyInfo    labelsGetter
+	TopologyInfo    LabelsGetter
 }
 
 func (d *CollstatsCollector) Describe(ch chan<- *prometheus.Desc) {

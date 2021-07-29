@@ -30,7 +30,7 @@ type ServerStatusCollector struct {
 	Client         *mongo.Client
 	CompatibleMode bool
 	Logger         *logrus.Logger
-	TopologyInfo   labelsGetter
+	TopologyInfo   LabelsGetter
 }
 
 func (d *ServerStatusCollector) Describe(ch chan<- *prometheus.Desc) {
