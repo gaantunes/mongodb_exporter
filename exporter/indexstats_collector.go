@@ -27,33 +27,33 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type indexstatsCollector struct {
-	ctx             context.Context
-	client          *mongo.Client
-	collections     []string
-	discoveringMode bool
-	logger          *logrus.Logger
-	topologyInfo    labelsGetter
+type IndexstatsCollector struct {
+	Ctx             context.Context
+	Client          *mongo.Client
+	Collections     []string
+	DiscoveringMode bool
+	Logger          *logrus.Logger
+	TopologyInfo    labelsGetter
 }
 
-func (d *indexstatsCollector) Describe(ch chan<- *prometheus.Desc) {
+func (d *IndexstatsCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(d, ch)
 }
 
-func (d *indexstatsCollector) Collect(ch chan<- prometheus.Metric) {
-	if d.discoveringMode {
+func (d *IndexstatsCollector) Collect(ch chan<- prometheus.Metric) {
+	if d.DiscoveringMode {
 		databases := map[string][]string{}
-		for _, dbCollection := range d.collections {
+		for _, dbCollection := range d.Collections {
 			parts := strings.Split(dbCollection, ".")
 			if _, ok := databases[parts[0]]; !ok {
 				db := parts[0]
-				databases[db], _ = d.client.Database(parts[0]).ListCollectionNames(d.ctx, bson.D{})
+				databases[db], _ = d.Client.Database(parts[0]).ListCollectionNames(d.Ctx, bson.D{})
 			}
 		}
 
-		d.collections = fromMapToSlice(databases)
+		d.Collections = fromMapToSlice(databases)
 	}
-	for _, dbCollection := range d.collections {
+	for _, dbCollection := range d.Collections {
 		parts := strings.Split(dbCollection, ".")
 		if len(parts) != 2 { //nolint:gomnd
 			continue
@@ -66,26 +66,26 @@ func (d *indexstatsCollector) Collect(ch chan<- prometheus.Metric) {
 			{Key: "$indexStats", Value: bson.M{}},
 		}
 
-		cursor, err := d.client.Database(database).Collection(collection).Aggregate(d.ctx, mongo.Pipeline{aggregation})
+		cursor, err := d.Client.Database(database).Collection(collection).Aggregate(d.Ctx, mongo.Pipeline{aggregation})
 		if err != nil {
-			d.logger.Errorf("cannot get $indexStats cursor for collection %s.%s: %s", database, collection, err)
+			d.Logger.Errorf("cannot get $indexStats cursor for collection %s.%s: %s", database, collection, err)
 			continue
 		}
 
 		var stats []bson.M
-		if err = cursor.All(d.ctx, &stats); err != nil {
-			d.logger.Errorf("cannot get $indexStats for collection %s.%s: %s", database, collection, err)
+		if err = cursor.All(d.Ctx, &stats); err != nil {
+			d.Logger.Errorf("cannot get $indexStats for collection %s.%s: %s", database, collection, err)
 			continue
 		}
 
-		d.logger.Debugf("indexStats for %s.%s", database, collection)
-		debugResult(d.logger, stats)
+		d.Logger.Debugf("indexStats for %s.%s", database, collection)
+		debugResult(d.Logger, stats)
 
 		for _, m := range stats {
 			// prefix and labels are needed to avoid duplicated metric names since the metrics are the
 			// same, for different collections.
 			prefix := fmt.Sprintf("%s_%s_%s", database, collection, m["name"])
-			labels := d.topologyInfo.baseLabels()
+			labels := d.TopologyInfo.baseLabels()
 			labels["namespace"] = database + "." + collection
 			labels["key_name"] = fmt.Sprintf("%s", m["name"])
 
@@ -122,4 +122,4 @@ func sanitizeMetrics(m bson.M) bson.M {
 	return filteredMetrics
 }
 
-var _ prometheus.Collector = (*indexstatsCollector)(nil)
+var _ prometheus.Collector = (*IndexstatsCollector)(nil)

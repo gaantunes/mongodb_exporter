@@ -37,7 +37,7 @@ type Exporter struct {
 	logger           *logrus.Logger
 	opts             *Opts
 	webListenAddress string
-	topologyInfo     labelsGetter
+	topologyInfo     LabelsGetter
 }
 
 // Opts holds new exporter options.
@@ -81,12 +81,12 @@ func New(opts *Opts) (*Exporter, error) {
 	}
 	if opts.GlobalConnPool {
 		var err error
-		exp.client, err = connect(ctx, opts.URI, opts.DirectConnect)
+		exp.client, err = Connect(ctx, opts.URI, opts.DirectConnect)
 		if err != nil {
 			return nil, err
 		}
 
-		exp.topologyInfo, err = newTopologyInfo(ctx, exp.client)
+		exp.topologyInfo, err = NewTopologyInfo(ctx, exp.client)
 		if err != nil {
 			return nil, err
 		}
@@ -95,66 +95,66 @@ func New(opts *Opts) (*Exporter, error) {
 	return exp, nil
 }
 
-func (e *Exporter) makeRegistry(ctx context.Context, client *mongo.Client, topologyInfo labelsGetter) *prometheus.Registry {
+func (e *Exporter) makeRegistry(ctx context.Context, client *mongo.Client, topologyInfo LabelsGetter) *prometheus.Registry {
 	// TODO: use NewPedanticRegistry when mongodb_exporter code fulfils its requirements (https://jira.percona.com/browse/PMM-6630).
 	registry := prometheus.NewRegistry()
 
-	gc := generalCollector{
-		ctx:    ctx,
-		client: client,
-		logger: e.opts.Logger,
+	gc := GeneralCollector{
+		Ctx:    ctx,
+		Client: client,
+		Logger: e.opts.Logger,
 	}
 	registry.MustRegister(&gc)
 
-	nodeType, err := getNodeType(ctx, client)
+	nodeType, err := GetNodeType(ctx, client)
 	if err != nil {
 		e.logger.Errorf("Cannot get node type to check if this is a mongos: %s", err)
 	}
 
 	if len(e.opts.CollStatsCollections) > 0 {
-		cc := collstatsCollector{
-			ctx:             ctx,
-			client:          client,
-			collections:     e.opts.CollStatsCollections,
-			compatibleMode:  e.opts.CompatibleMode,
-			discoveringMode: e.opts.DiscoveringMode,
-			logger:          e.opts.Logger,
-			topologyInfo:    topologyInfo,
+		cc := CollstatsCollector{
+			Ctx:             ctx,
+			Client:          client,
+			Collections:     e.opts.CollStatsCollections,
+			CompatibleMode:  e.opts.CompatibleMode,
+			DiscoveringMode: e.opts.DiscoveringMode,
+			Logger:          e.opts.Logger,
+			TopologyInfo:    topologyInfo,
 		}
 		registry.MustRegister(&cc)
 	}
 
 	if len(e.opts.IndexStatsCollections) > 0 {
-		ic := indexstatsCollector{
-			ctx:             ctx,
-			client:          client,
-			collections:     e.opts.IndexStatsCollections,
-			discoveringMode: e.opts.DiscoveringMode,
-			logger:          e.opts.Logger,
-			topologyInfo:    topologyInfo,
+		ic := IndexstatsCollector{
+			Ctx:             ctx,
+			Client:          client,
+			Collections:     e.opts.IndexStatsCollections,
+			DiscoveringMode: e.opts.DiscoveringMode,
+			Logger:          e.opts.Logger,
+			TopologyInfo:    topologyInfo,
 		}
 		registry.MustRegister(&ic)
 	}
 
 	if !e.opts.DisableDiagnosticData {
-		ddc := diagnosticDataCollector{
-			ctx:            ctx,
-			client:         client,
-			compatibleMode: e.opts.CompatibleMode,
-			logger:         e.opts.Logger,
-			topologyInfo:   topologyInfo,
+		ddc := DiagnosticDataCollector{
+			Ctx:            ctx,
+			Client:         client,
+			CompatibleMode: e.opts.CompatibleMode,
+			Logger:         e.opts.Logger,
+			TopologyInfo:   topologyInfo,
 		}
 		registry.MustRegister(&ddc)
 	}
 
 	// replSetGetStatus is not supported through mongos
-	if !e.opts.DisableReplicasetStatus && nodeType != typeMongos {
-		rsgsc := replSetGetStatusCollector{
-			ctx:            ctx,
-			client:         client,
-			compatibleMode: e.opts.CompatibleMode,
-			logger:         e.opts.Logger,
-			topologyInfo:   topologyInfo,
+	if !e.opts.DisableReplicasetStatus && nodeType != TypeMongos {
+		rsgsc := ReplSetGetStatusCollector{
+			Ctx:            ctx,
+			Client:         client,
+			CompatibleMode: e.opts.CompatibleMode,
+			Logger:         e.opts.Logger,
+			TopologyInfo:   topologyInfo,
 		}
 		registry.MustRegister(&rsgsc)
 	}
@@ -171,7 +171,7 @@ func (e *Exporter) handler() http.Handler {
 		// Use per-request connection.
 		if !e.opts.GlobalConnPool {
 			var err error
-			client, err = connect(ctx, e.opts.URI, e.opts.DirectConnect)
+			client, err = Connect(ctx, e.opts.URI, e.opts.DirectConnect)
 			if err != nil {
 				e.logger.Errorf("Cannot connect to MongoDB: %v", err)
 				http.Error(
@@ -189,7 +189,7 @@ func (e *Exporter) handler() http.Handler {
 				}
 			}()
 
-			topologyInfo, err = newTopologyInfo(ctx, client)
+			topologyInfo, err = NewTopologyInfo(ctx, client)
 			if err != nil {
 				e.logger.Errorf("Cannot get topology info: %v", err)
 				http.Error(
@@ -224,7 +224,7 @@ func (e *Exporter) Run() {
 	exporter_shared.RunServer("MongoDB", e.webListenAddress, e.path, handler)
 }
 
-func connect(ctx context.Context, dsn string, directConnect bool) (*mongo.Client, error) {
+func Connect(ctx context.Context, dsn string, directConnect bool) (*mongo.Client, error) {
 	clientOpts := options.Client().ApplyURI(dsn)
 	clientOpts.SetDirect(directConnect)
 	clientOpts.SetAppName("mongodb_exporter")

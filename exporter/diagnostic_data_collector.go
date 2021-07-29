@@ -26,26 +26,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type diagnosticDataCollector struct {
-	ctx            context.Context
-	client         *mongo.Client
-	compatibleMode bool
-	logger         *logrus.Logger
-	topologyInfo   labelsGetter
+type DiagnosticDataCollector struct {
+	Ctx            context.Context
+	Client         *mongo.Client
+	CompatibleMode bool
+	Logger         *logrus.Logger
+	TopologyInfo   labelsGetter
 }
 
-func (d *diagnosticDataCollector) Describe(ch chan<- *prometheus.Desc) {
+func (d *DiagnosticDataCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(d, ch)
 }
 
-func (d *diagnosticDataCollector) Collect(ch chan<- prometheus.Metric) {
+func (d *DiagnosticDataCollector) Collect(ch chan<- prometheus.Metric) {
 	var m bson.M
 
 	cmd := bson.D{{Key: "getDiagnosticData", Value: "1"}}
-	res := d.client.Database("admin").RunCommand(d.ctx, cmd)
+	res := d.Client.Database("admin").RunCommand(d.Ctx, cmd)
 
 	if err := res.Decode(&m); err != nil {
-		d.logger.Errorf("cannot run getDiagnosticData: %s", err)
+		d.Logger.Errorf("cannot run getDiagnosticData: %s", err)
 
 		return
 	}
@@ -53,29 +53,29 @@ func (d *diagnosticDataCollector) Collect(ch chan<- prometheus.Metric) {
 	m, ok := m["data"].(bson.M)
 	if !ok {
 		err := errors.Wrapf(errUnexpectedDataType, "%T for data field", m["data"])
-		d.logger.Errorf("cannot decode getDiagnosticData: %s", err)
+		d.Logger.Errorf("cannot decode getDiagnosticData: %s", err)
 
 		return
 	}
 
-	d.logger.Debug("getDiagnosticData result")
-	debugResult(d.logger, m)
+	d.Logger.Debug("getDiagnosticData result")
+	debugResult(d.Logger, m)
 
-	metrics := makeMetrics("", m, d.topologyInfo.baseLabels(), d.compatibleMode)
+	metrics := makeMetrics("", m, d.TopologyInfo.baseLabels(), d.CompatibleMode)
 	metrics = append(metrics, locksMetrics(m)...)
 
-	if d.compatibleMode {
-		metrics = append(metrics, specialMetrics(d.ctx, d.client, m, d.logger)...)
+	if d.CompatibleMode {
+		metrics = append(metrics, specialMetrics(d.Ctx, d.Client, m, d.Logger)...)
 
 		if cem, err := cacheEvictedTotalMetric(m); err == nil {
 			metrics = append(metrics, cem)
 		}
 
-		nodeType, err := getNodeType(d.ctx, d.client)
+		nodeType, err := getNodeType(d.Ctx, d.Client)
 		if err != nil {
-			d.logger.Errorf("Cannot get node type to check if this is a mongos: %s", err)
+			d.Logger.Errorf("Cannot get node type to check if this is a mongos: %s", err)
 		} else if nodeType == typeMongos {
-			metrics = append(metrics, mongosMetrics(d.ctx, d.client, d.logger)...)
+			metrics = append(metrics, mongosMetrics(d.Ctx, d.Client, d.Logger)...)
 		}
 	}
 
@@ -85,4 +85,4 @@ func (d *diagnosticDataCollector) Collect(ch chan<- prometheus.Metric) {
 }
 
 // check interface.
-var _ prometheus.Collector = (*diagnosticDataCollector)(nil)
+var _ prometheus.Collector = (*DiagnosticDataCollector)(nil)

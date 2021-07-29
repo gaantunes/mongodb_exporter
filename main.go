@@ -24,7 +24,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/sirupsen/logrus"
 
-	"github.com/percona/mongodb_exporter/exporter"
+	"github.com/gaantunes/mongodb_exporter/exporter"
 )
 
 //nolint:gochecknoglobals

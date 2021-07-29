@@ -1,4 +1,4 @@
-module github.com/percona/mongodb_exporter
+module github.com/gaantunes/mongodb_exporter
 
 go 1.15
 

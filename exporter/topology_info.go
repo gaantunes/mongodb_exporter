@@ -36,20 +36,20 @@ const (
 	labelReplicasetName  = "rs_nm"
 	labelReplicasetState = "rs_state"
 
-	typeIsDBGrid                    = "isdbgrid"
-	typeMongos      mongoDBNodeType = "mongos"
-	typeMongod      mongoDBNodeType = "mongod"
-	typeShardServer mongoDBNodeType = "shardsvr"
+	TypeIsDBGrid                    = "isdbgrid"
+	TypeMongos      mongoDBNodeType = "mongos"
+	TypeMongod      mongoDBNodeType = "mongod"
+	TypeShardServer mongoDBNodeType = "shardsvr"
 )
 
-type labelsGetter interface {
+type LabelsGetter interface {
 	baseLabels() map[string]string
 	loadLabels(context.Context) error
 }
 
 // This is an object to make it posible to easily reload the labels in case of
 // disconnection from the db. Just call loadLabels when required.
-type topologyInfo struct {
+type TopologyInfo struct {
 	// TODO: with https://jira.percona.com/browse/PMM-6435, replace this client pointer
 	// by a new connector, able to reconnect if needed. In case of reconnection, we should
 	// call loadLabels to refresh the labels because they might have changed
@@ -61,8 +61,8 @@ type topologyInfo struct {
 // ErrCannotGetTopologyLabels Cannot read topology labels.
 var ErrCannotGetTopologyLabels = fmt.Errorf("cannot get topology labels")
 
-func newTopologyInfo(ctx context.Context, client *mongo.Client) (*topologyInfo, error) {
-	ti := &topologyInfo{
+func NewTopologyInfo(ctx context.Context, client *mongo.Client) (*TopologyInfo, error) {
+	ti := &TopologyInfo{
 		client: client,
 		labels: make(map[string]string),
 	}
@@ -77,7 +77,7 @@ func newTopologyInfo(ctx context.Context, client *mongo.Client) (*topologyInfo, 
 
 // baseLabels returns a copy of the topology labels because in some collectors like
 // collstats collector, we must use these base labels and add the namespace or other labels.
-func (t *topologyInfo) baseLabels() map[string]string {
+func (t *TopologyInfo) baseLabels() map[string]string {
 	c := map[string]string{}
 
 	t.rw.RLock()
@@ -91,13 +91,13 @@ func (t *topologyInfo) baseLabels() map[string]string {
 
 // TopologyLabels reads several values from MongoDB instance like replicaset name, and other
 // topology information and returns a map of labels used to better identify the current monitored instance.
-func (t *topologyInfo) loadLabels(ctx context.Context) error {
+func (t *TopologyInfo) loadLabels(ctx context.Context) error {
 	t.rw.Lock()
 	defer t.rw.Unlock()
 
 	t.labels = make(map[string]string)
 
-	nodeType, err := getNodeType(ctx, t.client)
+	nodeType, err := GetNodeType(ctx, t.client)
 	if err != nil {
 		return errors.Wrap(err, "cannot get node type for topology info")
 	}
@@ -124,19 +124,19 @@ func (t *topologyInfo) loadLabels(ctx context.Context) error {
 	return nil
 }
 
-func getNodeType(ctx context.Context, client *mongo.Client) (mongoDBNodeType, error) {
+func GetNodeType(ctx context.Context, client *mongo.Client) (mongoDBNodeType, error) {
 	md := proto.MasterDoc{}
 	if err := client.Database("admin").RunCommand(ctx, primitive.M{"isMaster": 1}).Decode(&md); err != nil {
 		return "", err
 	}
 
 	if md.SetName != nil || md.Hosts != nil {
-		return typeShardServer, nil
-	} else if md.Msg == typeIsDBGrid {
+		return TypeShardServer, nil
+	} else if md.Msg == TypeIsDBGrid {
 		// isdbgrid is always the msg value when calling isMaster on a mongos
 		// see http://docs.mongodb.org/manual/core/sharded-cluster-query-router/
-		return typeMongos, nil
+		return TypeMongos, nil
 	}
 
-	return typeMongod, nil
+	return TypeMongod, nil
 }

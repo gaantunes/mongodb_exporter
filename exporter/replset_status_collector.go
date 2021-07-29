@@ -30,21 +30,21 @@ const (
 	replicationNotYetInitialized = 94
 )
 
-type replSetGetStatusCollector struct {
-	ctx            context.Context
-	client         *mongo.Client
-	compatibleMode bool
-	logger         *logrus.Logger
-	topologyInfo   labelsGetter
+type ReplSetGetStatusCollector struct {
+	Ctx            context.Context
+	Client         *mongo.Client
+	CompatibleMode bool
+	Logger         *logrus.Logger
+	TopologyInfo   labelsGetter
 }
 
-func (d *replSetGetStatusCollector) Describe(ch chan<- *prometheus.Desc) {
+func (d *ReplSetGetStatusCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(d, ch)
 }
 
-func (d *replSetGetStatusCollector) Collect(ch chan<- prometheus.Metric) {
+func (d *ReplSetGetStatusCollector) Collect(ch chan<- prometheus.Metric) {
 	cmd := bson.D{{Key: "replSetGetStatus", Value: "1"}}
-	res := d.client.Database("admin").RunCommand(d.ctx, cmd)
+	res := d.Client.Database("admin").RunCommand(d.Ctx, cmd)
 
 	var m bson.M
 
@@ -54,17 +54,17 @@ func (d *replSetGetStatusCollector) Collect(ch chan<- prometheus.Metric) {
 				return
 			}
 		}
-		d.logger.Errorf("cannot get replSetGetStatus: %s", err)
+		d.Logger.Errorf("cannot get replSetGetStatus: %s", err)
 
 		return
 	}
 
-	d.logger.Debug("replSetGetStatus result:")
-	debugResult(d.logger, m)
+	d.Logger.Debug("replSetGetStatus result:")
+	debugResult(d.Logger, m)
 
-	for _, metric := range makeMetrics("", m, d.topologyInfo.baseLabels(), d.compatibleMode) {
+	for _, metric := range makeMetrics("", m, d.TopologyInfo.baseLabels(), d.CompatibleMode) {
 		ch <- metric
 	}
 }
 
-var _ prometheus.Collector = (*replSetGetStatusCollector)(nil)
+var _ prometheus.Collector = (*ReplSetGetStatusCollector)(nil)

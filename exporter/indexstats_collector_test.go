@@ -32,7 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 func TestIndexStatsCollector(t *testing.T) {
@@ -62,11 +62,11 @@ func TestIndexStatsCollector(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	c := &indexstatsCollector{
-		client:       client,
-		collections:  []string{"testdb.testcol_00", "testdb.testcol_01", "testdb.testcol_02"},
-		logger:       logrus.New(),
-		topologyInfo: ti,
+	c := &IndexstatsCollector{
+		Client:       client,
+		Collections:  []string{"testdb.testcol_00", "testdb.testcol_01", "testdb.testcol_02"},
+		Logger:       logrus.New(),
+		TopologyInfo: ti,
 	}
 
 	// The last \n at the end of this string is important

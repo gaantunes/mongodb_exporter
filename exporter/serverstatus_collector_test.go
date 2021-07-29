@@ -26,7 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 func TestServerStatusDataCollector(t *testing.T) {
@@ -37,11 +37,11 @@ func TestServerStatusDataCollector(t *testing.T) {
 
 	ti := labelsGetterMock{}
 
-	c := &serverStatusCollector{
-		ctx:          ctx,
-		client:       client,
-		logger:       logrus.New(),
-		topologyInfo: ti,
+	c := &ServerStatusCollector{
+		Ctx:          ctx,
+		Client:       client,
+		Logger:       logrus.New(),
+		TopologyInfo: ti,
 	}
 
 	// The last \n at the end of this string is important

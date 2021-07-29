@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 // Use this for testing because labels like cluster ID are not constant in docker containers
@@ -64,7 +64,7 @@ func TestConnect(t *testing.T) {
 	t.Run("Connect without SSL", func(t *testing.T) {
 		for name, port := range ports {
 			dsn := fmt.Sprintf("mongodb://%s:%s/admin", hostname, port)
-			client, err := connect(ctx, dsn, true)
+			client, err := Connect(ctx, dsn, true)
 			assert.NoError(t, err, name)
 			err = client.Disconnect(ctx)
 			assert.NoError(t, err, name)
@@ -174,7 +174,7 @@ func TestMongoS(t *testing.T) {
 
 	for _, test := range tests {
 		dsn := fmt.Sprintf("mongodb://%s:%s/admin", hostname, test.port)
-		client, err := connect(ctx, dsn, true)
+		client, err := Connect(ctx, dsn, true)
 		assert.NoError(t, err)
 
 		exporterOpts := &Opts{
@@ -188,12 +188,12 @@ func TestMongoS(t *testing.T) {
 			log.Fatal(err)
 		}
 
-		rsgsc := replSetGetStatusCollector{
-			ctx:            ctx,
-			client:         client,
-			compatibleMode: e.opts.CompatibleMode,
-			logger:         e.opts.Logger,
-			topologyInfo:   new(labelsGetterMock),
+		rsgsc := ReplSetGetStatusCollector{
+			Ctx:            ctx,
+			Client:         client,
+			CompatibleMode: e.opts.CompatibleMode,
+			Logger:         e.opts.Logger,
+			TopologyInfo:   new(labelsGetterMock),
 		}
 
 		r := e.makeRegistry(ctx, client, new(labelsGetterMock))

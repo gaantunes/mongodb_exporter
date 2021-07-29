@@ -25,21 +25,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type serverStatusCollector struct {
-	ctx            context.Context
-	client         *mongo.Client
-	compatibleMode bool
-	logger         *logrus.Logger
-	topologyInfo   labelsGetter
+type ServerStatusCollector struct {
+	Ctx            context.Context
+	Client         *mongo.Client
+	CompatibleMode bool
+	Logger         *logrus.Logger
+	TopologyInfo   labelsGetter
 }
 
-func (d *serverStatusCollector) Describe(ch chan<- *prometheus.Desc) {
+func (d *ServerStatusCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(d, ch)
 }
 
-func (d *serverStatusCollector) Collect(ch chan<- prometheus.Metric) {
+func (d *ServerStatusCollector) Collect(ch chan<- prometheus.Metric) {
 	cmd := bson.D{{Key: "serverStatus", Value: "1"}}
-	res := d.client.Database("admin").RunCommand(d.ctx, cmd)
+	res := d.Client.Database("admin").RunCommand(d.Ctx, cmd)
 
 	var m bson.M
 	if err := res.Decode(&m); err != nil {
@@ -48,9 +48,9 @@ func (d *serverStatusCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	logrus.Debug("serverStatus result:")
-	debugResult(d.logger, m)
+	debugResult(d.Logger, m)
 
-	for _, metric := range makeMetrics("", m, d.topologyInfo.baseLabels(), d.compatibleMode) {
+	for _, metric := range makeMetrics("", m, d.TopologyInfo.baseLabels(), d.CompatibleMode) {
 		ch <- metric
 	}
 }

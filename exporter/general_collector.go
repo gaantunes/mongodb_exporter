@@ -27,18 +27,18 @@ import (
 
 // This collector is always enabled and it is not directly related to any particular MongoDB
 // command to gather stats.
-type generalCollector struct {
-	ctx    context.Context
-	client *mongo.Client
-	logger *logrus.Logger
+type GeneralCollector struct {
+	Ctx    context.Context
+	Client *mongo.Client
+	Logger *logrus.Logger
 }
 
-func (d *generalCollector) Describe(ch chan<- *prometheus.Desc) {
+func (d *GeneralCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(d, ch)
 }
 
-func (d *generalCollector) Collect(ch chan<- prometheus.Metric) {
-	ch <- mongodbUpMetric(d.ctx, d.client, d.logger)
+func (d *GeneralCollector) Collect(ch chan<- prometheus.Metric) {
+	ch <- mongodbUpMetric(d.Ctx, d.Client, d.Logger)
 }
 
 func mongodbUpMetric(ctx context.Context, client *mongo.Client, log *logrus.Logger) prometheus.Metric {
@@ -55,4 +55,4 @@ func mongodbUpMetric(ctx context.Context, client *mongo.Client, log *logrus.Logg
 	return prometheus.MustNewConstMetric(d, prometheus.GaugeValue, value)
 }
 
-var _ prometheus.Collector = (*generalCollector)(nil)
+var _ prometheus.Collector = (*GeneralCollector)(nil)

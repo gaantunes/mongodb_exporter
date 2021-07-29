@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 func TestGeneralCollector(t *testing.T) {
@@ -36,10 +36,10 @@ func TestGeneralCollector(t *testing.T) {
 	defer cancel()
 
 	client := tu.DefaultTestClient(ctx, t)
-	c := &generalCollector{
-		ctx:    ctx,
-		client: client,
-		logger: logrus.New(),
+	c := &GeneralCollector{
+		Ctx:    ctx,
+		Client: client,
+		Logger: logrus.New(),
 	}
 
 	// The last \n at the end of this string is important

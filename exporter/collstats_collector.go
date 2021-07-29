@@ -26,34 +26,34 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type collstatsCollector struct {
-	ctx             context.Context
-	client          *mongo.Client
-	collections     []string
-	compatibleMode  bool
-	discoveringMode bool
-	logger          *logrus.Logger
-	topologyInfo    labelsGetter
+type CollstatsCollector struct {
+	Ctx             context.Context
+	Client          *mongo.Client
+	Collections     []string
+	CompatibleMode  bool
+	DiscoveringMode bool
+	Logger          *logrus.Logger
+	TopologyInfo    labelsGetter
 }
 
-func (d *collstatsCollector) Describe(ch chan<- *prometheus.Desc) {
+func (d *CollstatsCollector) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.DescribeByCollect(d, ch)
 }
 
-func (d *collstatsCollector) Collect(ch chan<- prometheus.Metric) {
-	if d.discoveringMode {
+func (d *CollstatsCollector) Collect(ch chan<- prometheus.Metric) {
+	if d.DiscoveringMode {
 		databases := map[string][]string{}
-		for _, dbCollection := range d.collections {
+		for _, dbCollection := range d.Collections {
 			parts := strings.Split(dbCollection, ".")
 			if _, ok := databases[parts[0]]; !ok {
 				db := parts[0]
-				databases[db], _ = d.client.Database(parts[0]).ListCollectionNames(d.ctx, bson.D{})
+				databases[db], _ = d.Client.Database(parts[0]).ListCollectionNames(d.Ctx, bson.D{})
 			}
 		}
 
-		d.collections = fromMapToSlice(databases)
+		d.Collections = fromMapToSlice(databases)
 	}
-	for _, dbCollection := range d.collections {
+	for _, dbCollection := range d.Collections {
 		parts := strings.Split(dbCollection, ".")
 		if len(parts) != 2 { //nolint:gomnd
 			continue
@@ -79,32 +79,32 @@ func (d *collstatsCollector) Collect(ch chan<- prometheus.Metric) {
 			},
 		}
 
-		cursor, err := d.client.Database(database).Collection(collection).Aggregate(d.ctx, mongo.Pipeline{aggregation, project})
+		cursor, err := d.Client.Database(database).Collection(collection).Aggregate(d.Ctx, mongo.Pipeline{aggregation, project})
 		if err != nil {
-			d.logger.Errorf("cannot get $collstats cursor for collection %s.%s: %s", database, collection, err)
+			d.Logger.Errorf("cannot get $collstats cursor for collection %s.%s: %s", database, collection, err)
 			continue
 		}
 
 		var stats []bson.M
-		if err = cursor.All(d.ctx, &stats); err != nil {
-			d.logger.Errorf("cannot get $collstats for collection %s.%s: %s", database, collection, err)
+		if err = cursor.All(d.Ctx, &stats); err != nil {
+			d.Logger.Errorf("cannot get $collstats for collection %s.%s: %s", database, collection, err)
 			continue
 		}
 
-		d.logger.Debugf("$collStats metrics for %s.%s", database, collection)
-		debugResult(d.logger, stats)
+		d.Logger.Debugf("$collStats metrics for %s.%s", database, collection)
+		debugResult(d.Logger, stats)
 
 		// Since all collections will have the same fields, we need to use a metric prefix (db+col)
 		// to differentiate metrics between collection. Labels are being set only to matke it easier
 		// to filter
 		prefix := database + "." + collection
 
-		labels := d.topologyInfo.baseLabels()
+		labels := d.TopologyInfo.baseLabels()
 		labels["database"] = database
 		labels["collection"] = collection
 
 		for _, metrics := range stats {
-			for _, metric := range makeMetrics(prefix, metrics, labels, d.compatibleMode) {
+			for _, metric := range makeMetrics(prefix, metrics, labels, d.CompatibleMode) {
 				ch <- metric
 			}
 		}
@@ -122,4 +122,4 @@ func fromMapToSlice(databases map[string][]string) []string {
 	return collections
 }
 
-var _ prometheus.Collector = (*collstatsCollector)(nil)
+var _ prometheus.Collector = (*CollstatsCollector)(nil)

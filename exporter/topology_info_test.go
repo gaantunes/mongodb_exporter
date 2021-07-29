@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 func TestTopologyLabels(t *testing.T) {
@@ -33,7 +33,7 @@ func TestTopologyLabels(t *testing.T) {
 
 	client := tu.DefaultTestClient(ctx, t)
 
-	ti, err := newTopologyInfo(ctx, client)
+	ti, err := NewTopologyInfo(ctx, client)
 	require.NoError(t, err)
 	bl := ti.baseLabels()
 

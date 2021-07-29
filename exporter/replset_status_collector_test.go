@@ -26,7 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 func TestReplsetStatusCollector(t *testing.T) {
@@ -37,11 +37,11 @@ func TestReplsetStatusCollector(t *testing.T) {
 
 	ti := labelsGetterMock{}
 
-	c := &replSetGetStatusCollector{
-		ctx:          ctx,
-		client:       client,
-		logger:       logrus.New(),
-		topologyInfo: ti,
+	c := &ReplSetGetStatusCollector{
+		Ctx:          ctx,
+		Client:       client,
+		Logger:       logrus.New(),
+		TopologyInfo: ti,
 	}
 
 	// The last \n at the end of this string is important
@@ -72,10 +72,10 @@ func TestReplsetStatusCollectorNoSharding(t *testing.T) {
 
 	ti := labelsGetterMock{}
 
-	c := &replSetGetStatusCollector{
-		ctx:          ctx,
-		client:       client,
-		topologyInfo: ti,
+	c := &ReplSetGetStatusCollector{
+		Ctx:          ctx,
+		Client:       client,
+		TopologyInfo: ti,
 	}
 
 	expected := strings.NewReader(``)

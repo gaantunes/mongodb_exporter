@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/percona/mongodb_exporter/internal/tu"
+	"github.com/gaantunes/mongodb_exporter/internal/tu"
 )
 
 func TestDiagnosticDataCollector(t *testing.T) {
@@ -42,10 +42,10 @@ func TestDiagnosticDataCollector(t *testing.T) {
 	logger := logrus.New()
 	ti := labelsGetterMock{}
 
-	c := &diagnosticDataCollector{
-		client:       client,
-		logger:       logger,
-		topologyInfo: ti,
+	c := &DiagnosticDataCollector{
+		Client:       client,
+		Logger:       logger,
+		TopologyInfo: ti,
 	}
 
 	// The last \n at the end of this string is important
@@ -82,14 +82,14 @@ func TestAllDiagnosticDataCollectorMetrics(t *testing.T) {
 
 	client := tu.DefaultTestClient(ctx, t)
 
-	ti, err := newTopologyInfo(ctx, client)
+	ti, err := NewTopologyInfo(ctx, client)
 	require.NoError(t, err)
 
-	c := &diagnosticDataCollector{
-		client:         client,
-		logger:         logrus.New(),
-		compatibleMode: true,
-		topologyInfo:   ti,
+	c := &DiagnosticDataCollector{
+		Client:         client,
+		Logger:         logrus.New(),
+		CompatibleMode: true,
+		TopologyInfo:   ti,
 	}
 
 	metrics := helpers.CollectMetrics(c)
